@@ -5,15 +5,25 @@ const cron = require('node-cron');
 const https = require('https');
 const http = require('http');
 
-(function () {
+(async function () {
   console.log('init')
+
   cron.schedule(config.schedule, () => onSchedule());
+
+  console.log('exit')
 })();
 
 async function onSchedule() {
 
   console.log('start');
 
+  await bos()
+  await terminal()
+
+  console.log('finish');
+}
+
+async function bos() {
   var bosStats = await getBosStats();  
 
   console.log(bosStats.lastUpdated);
@@ -22,11 +32,9 @@ async function onSchedule() {
 
   for (var node of bosStats.data) {
     if (node.publicKey == config.public_key) {
-      writePoint(timestamp, node);
+      writeBosPoint(timestamp, node);
     }
   }
-
-  console.log('finish');
 }
 
 function getBosStats() {
@@ -43,7 +51,7 @@ function getBosStats() {
   });
 }
 
-function writePoint(timestamp, node) {
+function writeBosPoint(timestamp, node) {
 
   var data = 
     `bos,alias=${node.alias},publicKey=${node.publicKey} ` +
@@ -56,6 +64,58 @@ function writePoint(timestamp, node) {
     `rankGrowth=${node.rankGrowth},` +
     `rankAvailability=${node.rankAvailability} ` +
     `${timestamp}000000`;
+
+  postInflux(data);
+}
+
+async function terminal() {
+  var terminalStats = await getTerminalStats()
+
+  console.log(terminalStats.last_updated)
+
+  var timestamp = Date.parse(terminalStats.last_updated)
+
+  var node = terminalStats.scored[config.public_key]
+
+  writeTerminalPoint(timestamp, node)
+}
+
+function getTerminalStats() {
+  return new Promise(function(resolve, reject) {
+    https.get("https://ln-scores.prod.lightningcluster.com/availability/v1/btc_summary.json", { headers : { "accept" : "application/json" }}, res => {
+      let body = "";
+      res.on("data", data => {
+        body += data;
+      });
+      res.on("end", () => {
+        resolve(JSON.parse(body));
+      });
+    });
+  });
+}
+
+function writeTerminalPoint(timestamp, node) {
+
+  var data = 
+    `terminal,alias=${node.alias},publicKey=${config.public_key} ` +
+    `score=${node.score},` +
+    `total_capacity=${node.total_capacity},` +
+    `aged_capacity=${node.aged_capacity},` +
+    `centrality=${node.centrality},` +
+    `centrality_normalized=${node.centrality_normalized},` +
+    `stable_inbound_peers=${node.stable_inbound_peers.length},` +
+    `stable_outbound_peers=${node.stable_outbound_peers.length},` +
+    `good_inbound_peers=${node.good_inbound_peers.length},` +
+    `good_outbound_peers=${node.good_outbound_peers.length},` +
+    `max_channel_age=${node.max_channel_age},` +
+    `total_peers=${node.total_peers} ` +
+    `${timestamp}000000`;
+
+
+  postInflux(data);
+}
+
+function postInflux(data) {
 
   console.log(data);
 

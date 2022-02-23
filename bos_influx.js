@@ -8,7 +8,8 @@ const http = require('http');
 (async function () {
   console.log('init')
 
-  cron.schedule(config.schedule, () => onSchedule());
+  await terminal()
+  // cron.schedule(config.schedule, () => onSchedule());
 
   console.log('exit')
 })();
@@ -77,6 +78,15 @@ async function terminal() {
 
   var node = terminalStats.scored[config.public_key]
 
+  var rank = 1
+  for (var i in terminalStats.scored) {
+    if (terminalStats.scored[i].score > node.score) {
+      rank++
+    }
+  }
+
+  node.rank = rank
+
   writeTerminalPoint(timestamp, node)
 }
 
@@ -99,6 +109,7 @@ function writeTerminalPoint(timestamp, node) {
   var data = 
     `terminal,alias=${node.alias},publicKey=${config.public_key} ` +
     `score=${node.score},` +
+    `rank=${node.rank},` +
     `total_capacity=${node.total_capacity},` +
     `aged_capacity=${node.aged_capacity},` +
     `centrality=${node.centrality},` +
@@ -110,7 +121,6 @@ function writeTerminalPoint(timestamp, node) {
     `max_channel_age=${node.max_channel_age},` +
     `total_peers=${node.total_peers} ` +
     `${timestamp}000000`;
-
 
   postInflux(data);
 }
@@ -130,16 +140,16 @@ function postInflux(data) {
     }
   };
 
-  var post_req = http.request(post_options, res => {
-    let body = "";
-    res.on("data", data => {
-      body += data;
-    });
-    res.on("end", () => {
-      console.log(body);
-    });
-  });
+  // var post_req = http.request(post_options, res => {
+  //   let body = "";
+  //   res.on("data", data => {
+  //     body += data;
+  //   });
+  //   res.on("end", () => {
+  //     console.log(body);
+  //   });
+  // });
 
-  post_req.write(data);
-  post_req.end();
+  // post_req.write(data);
+  // post_req.end();
 }

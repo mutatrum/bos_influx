@@ -8,8 +8,7 @@ const http = require('http');
 (async function () {
   console.log('init')
 
-  await terminal()
-  // cron.schedule(config.schedule, () => onSchedule());
+  cron.schedule(config.schedule, () => onSchedule());
 
   console.log('exit')
 })();
@@ -140,16 +139,16 @@ function postInflux(data) {
     }
   };
 
-  // var post_req = http.request(post_options, res => {
-  //   let body = "";
-  //   res.on("data", data => {
-  //     body += data;
-  //   });
-  //   res.on("end", () => {
-  //     console.log(body);
-  //   });
-  // });
+  var post_req = http.request(post_options, res => {
+    let body = "";
+    res.on("data", data => {
+      body += data;
+    });
+    res.on("end", () => {
+      console.log(body);
+    });
+  });
 
-  // post_req.write(data);
-  // post_req.end();
+  post_req.write(data);
+  post_req.end();
 }

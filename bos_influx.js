@@ -125,8 +125,6 @@ function writeTerminalPoint(timestamp, node) {
 async function amboss() {
   var ambossStats = await getAmbossStats()
 
-  console.log(JSON.stringify(ambossStats))
-
   var timestamp = Date.parse(ambossStats.data.getNode.graph_info.last_update)
 
   writeAmbossAgePoint(timestamp, ambossStats)
@@ -220,7 +218,7 @@ function getAmbossStats() {
     },
     timeout: 5000
   }
-  console.log(JSON.stringify(data))
+
   return new Promise(function(resolve, reject) {
     const req = https.request('https://api.amboss.space/graphql', options, res => {
       let body = "";

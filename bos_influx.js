@@ -19,6 +19,7 @@ async function onSchedule() {
 
   await bos()
   await terminal()
+  await amboss()
 
   console.log('finish');
 }
@@ -77,14 +78,12 @@ async function terminal() {
 
   var node = terminalStats.scored[config.public_key]
 
-  var rank = 1
+  node.rank = 1
   for (var i in terminalStats.scored) {
     if (terminalStats.scored[i].score > node.score) {
-      rank++
+      node.rank++
     }
   }
-
-  node.rank = rank
 
   writeTerminalPoint(timestamp, node)
 }
@@ -104,7 +103,6 @@ function getTerminalStats() {
 }
 
 function writeTerminalPoint(timestamp, node) {
-
   var data = 
     `terminal,alias=${node.alias},publicKey=${config.public_key} ` +
     `score=${node.score},` +
@@ -122,6 +120,130 @@ function writeTerminalPoint(timestamp, node) {
     `${timestamp}000000`;
 
   postInflux(data);
+}
+
+async function amboss() {
+  var ambossStats = await getAmbossStats()
+
+  console.log(JSON.stringify(ambossStats))
+
+  var timestamp = Date.parse(ambossStats.data.getNode.graph_info.last_update)
+
+  writeAmbossAgePoint(timestamp, ambossStats)
+  writeAmbossFeeLocalPoint(timestamp, ambossStats)
+  writeAmbossFeeRemotePoint(timestamp, ambossStats)
+  writeLnNodeInsightsPoint(timestamp, ambossStats)
+}
+
+function writeAmbossAgePoint(timestamp, stats) {
+  var alias = stats.data.getNodeAlias
+  var channelInfo = stats.data.getNode.graph_info.channels.channel_info
+  var age = channelInfo.age
+  var data = 
+    `amboss,stats=age,alias=${alias},publicKey=${config.public_key} ` +
+    `channel_count=${age.count},` +
+    `max=${age.max},` +
+    `mean=${age.mean},` +
+    `median=${age.median},` +
+    `min=${age.min} ` +
+    `${timestamp}000000`;
+
+  postInflux(data);
+}
+
+function writeAmbossFeeLocalPoint(timestamp, stats) {
+  var alias = stats.data.getNodeAlias
+  var feeLocalInfo = stats.data.getNode.graph_info.channels.fee_info.local
+  var data = 
+    `amboss,stats=fee_local,alias=${alias},publicKey=${config.public_key} ` +
+    `max=${feeLocalInfo.max},` +
+    `mean=${feeLocalInfo.mean},` +
+    `median=${feeLocalInfo.median},` +
+    `min=${feeLocalInfo.min},` +
+    `weighted=${feeLocalInfo.weighted},` +
+    `weighted_corrected=${feeLocalInfo.weighted_corrected} ` +
+    `${timestamp}000000`;
+
+  postInflux(data);
+}
+
+function writeAmbossFeeRemotePoint(timestamp, stats) {
+  var alias = stats.data.getNodeAlias
+  var feeLocalInfo = stats.data.getNode.graph_info.channels.fee_info.remote
+  var data = 
+    `amboss,stats=fee_remote,alias=${alias},publicKey=${config.public_key} ` +
+    `max=${feeLocalInfo.max},` +
+    `mean=${feeLocalInfo.mean},` +
+    `median=${feeLocalInfo.median},` +
+    `min=${feeLocalInfo.min},` +
+    `weighted=${feeLocalInfo.weighted},` +
+    `weighted_corrected=${feeLocalInfo.weighted_corrected} ` +
+    `${timestamp}000000`;
+
+  postInflux(data);
+}
+
+function writeLnNodeInsightsPoint(timestamp, stats) {
+  var alias = stats.data.getNodeAlias
+  var lnNodeInsight = stats.data.getLnNodeInsights
+  var data = 
+    `lnnodeinsight,alias=${alias},publicKey=${config.public_key} ` +
+    `cent_between_rank=${lnNodeInsight.cent_between_rank},` +
+    `cent_between_weight_rank=${lnNodeInsight.cent_between_weight_rank},` +
+    `cent_close_rank=${lnNodeInsight.cent_close_rank},` +
+    `cent_close_weight_rank=${lnNodeInsight.cent_close_weight_rank},` +
+    `cent_eigen_rank=${lnNodeInsight.cent_eigen_rank},` +
+    `cent_eigen_weight_rank=${lnNodeInsight.cent_eigen_weight_rank} ` +
+    `${timestamp}000000`;
+
+  postInflux(data);
+}
+
+function getAmbossStats() {
+  const data = {
+    variables: {
+      pubkey: config.public_key,
+    },
+    query: 'query($pubkey: String!) {' 
+         + 'getLnNodeInsights(pubkey: $pubkey) {cent_between_rank cent_between_weight_rank cent_close_rank cent_close_weight_rank cent_eigen_rank cent_eigen_weight_rank} ' 
+         + 'getNode(pubkey: $pubkey) {graph_info {last_update channels {channel_info {age {count max mean median min}} fee_info {local {max mean median min sd weighted weighted_corrected} remote {max mean median min sd weighted weighted_corrected}}}}} ' 
+         + 'getNodeAlias(pubkey: $pubkey) '
+         + '}'}
+
+  const dataString = JSON.stringify(data)         
+
+  const options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': dataString.length,
+    },
+    timeout: 5000
+  }
+  console.log(JSON.stringify(data))
+  return new Promise(function(resolve, reject) {
+    const req = https.request('https://api.amboss.space/graphql', options, res => {
+      let body = "";
+      res.on("data", data => {
+        body += data;
+      });
+      res.on("end", () => {
+        resolve(JSON.parse(body));
+      });
+    });
+
+    req.on('error', (err) => {
+      reject(err)
+    })
+
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error('Request time out'))
+    })
+
+    req.write(dataString)
+    req.end()
+  });
 }
 
 function postInflux(data) {

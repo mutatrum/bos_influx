@@ -76,8 +76,13 @@ async function terminal() {
 
   var timestamp = Date.parse(terminalStats.last_updated)
 
-  var node = terminalStats.scored[config.public_key]
+  var node = getNode(terminalStats)
 
+  if (node === undefined) {
+    console.log(`Node ${config.public_key} not found in terminal`)
+    return
+  }
+  
   node.rank = 1
   for (var i in terminalStats.scored) {
     if (terminalStats.scored[i].score > node.score) {
@@ -86,6 +91,22 @@ async function terminal() {
   }
 
   writeTerminalPoint(timestamp, node)
+}
+
+function getNode(terminalStats) {
+  if (terminalStats.scored.hasOwnProperty(config.public_key))
+    return terminalStats.scored[config.public_key]
+
+  if (terminalStats.stable.hasOwnProperty(config.public_key))
+    return terminalStats.stable[config.public_key]
+
+  if (terminalStats.scored.hasOwnProperty(config.public_key))
+    return terminalStats.scored[config.public_key]
+
+  if (terminalStats.unconnectable.hasOwnProperty(config.public_key))
+    return terminalStats.unconnectable[config.public_key]
+
+  return  
 }
 
 function getTerminalStats() {

@@ -126,21 +126,25 @@ function getTerminalStats() {
 function writeTerminalPoint(timestamp, node) {
   var data = 
     `terminal,alias=${node.alias},publicKey=${config.public_key} ` +
-    `score=${node.score},` +
-    `rank=${node.rank},` +
-    `total_capacity=${node.total_capacity},` +
-    `aged_capacity=${node.aged_capacity},` +
-    `centrality=${node.centrality},` +
+    `score=${node.score ??= 0},` +
+    `rank=${node.rank ??= 0},` +
+    `total_capacity=${node.total_capacity ??= 0},` +
+    `aged_capacity=${node.aged_capacity ??= 0},` +
+    `centrality=${node.centrality ??= 0},` +
     `centrality_normalized=${node.centrality_normalized},` +
-    `stable_inbound_peers=${node.stable_inbound_peers.length},` +
-    `stable_outbound_peers=${node.stable_outbound_peers.length},` +
-    `good_inbound_peers=${node.good_inbound_peers.length},` +
-    `good_outbound_peers=${node.good_outbound_peers.length},` +
-    `max_channel_age=${node.max_channel_age},` +
-    `total_peers=${node.total_peers} ` +
+    `stable_inbound_peers=${safeLength(node.stable_inbound_peers)},` +
+    `stable_outbound_peers=${safeLength(node.stable_outbound_peers)},` +
+    `good_inbound_peers=${safeLength(node.good_inbound_peers)},` +
+    `good_outbound_peers=${safeLength(node.good_outbound_peers)},` +
+    `max_channel_age=${node.max_channel_age ??= 0},` +
+    `total_peers=${node.total_peers ??= 0} ` +
     `${timestamp}000000`;
 
   postInflux(data);
+}
+
+function safeLength(a) {
+  return a === undefined ? 0 : a.length
 }
 
 async function amboss() {

@@ -100,8 +100,8 @@ function getNode(terminalStats) {
   if (terminalStats.stable.hasOwnProperty(config.public_key))
     return terminalStats.stable[config.public_key]
 
-  if (terminalStats.scored.hasOwnProperty(config.public_key))
-    return terminalStats.scored[config.public_key]
+  if (terminalStats.unstable.hasOwnProperty(config.public_key))
+    return terminalStats.unstable[config.public_key]
 
   if (terminalStats.unconnectable.hasOwnProperty(config.public_key))
     return terminalStats.unconnectable[config.public_key]

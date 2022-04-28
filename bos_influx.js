@@ -8,7 +8,7 @@ const http = require('http');
 (async function () {
   console.log('init')
 
-  cron.schedule(config.schedule, () => onSchedule());
+  cron.schedule(config.schedule, () => onSchedule())
 
   console.log('exit')
 })();
@@ -111,7 +111,7 @@ function getNode(terminalStats) {
 
 function getTerminalStats() {
   return new Promise(function(resolve, reject) {
-    https.get("https://ln-scores.prod.lightningcluster.com/availability/v1/btc_summary.json", { headers : { "accept" : "application/json" }}, res => {
+    https.get("https://nodes.lightning.computer/availability/v2/btc_summary.json", { headers : { "accept" : "application/json" }}, res => {
       let body = "";
       res.on("data", data => {
         body += data;

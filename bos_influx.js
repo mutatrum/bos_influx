@@ -212,7 +212,7 @@ function writeAmbossFeeRemotePoint(timestamp, stats) {
 
 function writeLnNodeInsightsPoint(timestamp, stats) {
   var alias = stats.data.getNodeAlias
-  var scores = stats.data.getLnNodeInsightsScores.scores
+  var scores = stats.data.getNode.socials.lnnodeinsights_info.scores
   var data = 
     `lnnodeinsight,alias=${alias},publicKey=${config.public_key} ` +
     `cent_between_rank=${scores.cent_between_rank},` +
@@ -231,11 +231,58 @@ function getAmbossStats() {
     variables: {
       pubkey: config.public_key,
     },
-    query: 'query($pubkey: String!) {' 
-         + 'getLnNodeInsightsScores(pubkey: $pubkey) {scores {cent_between_rank cent_between_weight_rank cent_close_rank cent_close_weight_rank cent_eigen_rank cent_eigen_weight_rank} } ' 
-         + 'getNode(pubkey: $pubkey) {graph_info {last_update channels {channel_info {age {count max mean median min}} fee_info {local {max mean median min sd weighted weighted_corrected} remote {max mean median min sd weighted weighted_corrected}}}}} ' 
-         + 'getNodeAlias(pubkey: $pubkey) '
-         + '}'}
+    query: `
+    query($pubkey: String!) {
+      getNode(pubkey: $pubkey) {
+        graph_info {
+          last_update
+          channels {
+            channel_info {
+              age {
+                count
+                max
+                mean
+                median
+                min
+              }
+            }
+            fee_info {
+              local {
+                max
+                mean
+                median
+                min
+                sd
+                weighted
+                weighted_corrected
+              }
+              remote {
+                max
+                mean
+                median
+                min
+                sd
+                weighted
+                weighted_corrected
+              }
+            }
+          }
+        }
+        socials {
+          lnnodeinsights_info {
+            scores {
+              cent_between_rank
+              cent_between_weight_rank
+              cent_close_rank
+              cent_close_weight_rank
+              cent_eigen_rank
+              cent_eigen_weight_rank
+            }
+          }
+        }
+      }
+      getNodeAlias(pubkey: $pubkey)
+    }`}
 
   const dataString = JSON.stringify(data)         
 

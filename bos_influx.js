@@ -150,6 +150,10 @@ function safeLength(a) {
 async function amboss() {
   var ambossStats = await getAmbossStats()
 
+  if (typeof ambossStats.errors !== 'undefined') {
+    console.log(ambossStats)
+  }
+
   var timestamp = Date.parse(ambossStats.data.getNode.graph_info.last_update)
 
   writeAmbossAgePoint(timestamp, ambossStats)
@@ -208,15 +212,15 @@ function writeAmbossFeeRemotePoint(timestamp, stats) {
 
 function writeLnNodeInsightsPoint(timestamp, stats) {
   var alias = stats.data.getNodeAlias
-  var lnNodeInsight = stats.data.getLnNodeInsights
+  var scores = stats.data.getLnNodeInsightsScores.scores
   var data = 
     `lnnodeinsight,alias=${alias},publicKey=${config.public_key} ` +
-    `cent_between_rank=${lnNodeInsight.cent_between_rank},` +
-    `cent_between_weight_rank=${lnNodeInsight.cent_between_weight_rank},` +
-    `cent_close_rank=${lnNodeInsight.cent_close_rank},` +
-    `cent_close_weight_rank=${lnNodeInsight.cent_close_weight_rank},` +
-    `cent_eigen_rank=${lnNodeInsight.cent_eigen_rank},` +
-    `cent_eigen_weight_rank=${lnNodeInsight.cent_eigen_weight_rank} ` +
+    `cent_between_rank=${scores.cent_between_rank},` +
+    `cent_between_weight_rank=${scores.cent_between_weight_rank},` +
+    `cent_close_rank=${scores.cent_close_rank},` +
+    `cent_close_weight_rank=${scores.cent_close_weight_rank},` +
+    `cent_eigen_rank=${scores.cent_eigen_rank},` +
+    `cent_eigen_weight_rank=${scores.cent_eigen_weight_rank} ` +
     `${timestamp}000000`;
 
   postInflux(data);
@@ -228,7 +232,7 @@ function getAmbossStats() {
       pubkey: config.public_key,
     },
     query: 'query($pubkey: String!) {' 
-         + 'getLnNodeInsights(pubkey: $pubkey) {cent_between_rank cent_between_weight_rank cent_close_rank cent_close_weight_rank cent_eigen_rank cent_eigen_weight_rank} ' 
+         + 'getLnNodeInsightsScores(pubkey: $pubkey) {scores {cent_between_rank cent_between_weight_rank cent_close_rank cent_close_weight_rank cent_eigen_rank cent_eigen_weight_rank} } ' 
          + 'getNode(pubkey: $pubkey) {graph_info {last_update channels {channel_info {age {count max mean median min}} fee_info {local {max mean median min sd weighted weighted_corrected} remote {max mean median min sd weighted weighted_corrected}}}}} ' 
          + 'getNodeAlias(pubkey: $pubkey) '
          + '}'}

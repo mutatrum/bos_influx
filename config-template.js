@@ -2,5 +2,6 @@ module.exports = {
   public_key: '',
   schedule: '0 * * * *',
   influx_host: '',
-  influx_db: ''
+  influx_db: '',
+  amboss_api: ''
 }

@@ -242,6 +242,7 @@ function getAmbossStats() {
   const options = {
     method: 'POST',
     headers: {
+      'authorization': `Bearer ${config.amboss_api}`,
       'Content-Type': 'application/json',
       'Content-Length': dataString.length,
     },

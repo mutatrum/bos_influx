@@ -111,7 +111,7 @@ function getNode(terminalStats) {
 
 function getTerminalStats() {
   return new Promise(function(resolve, reject) {
-    https.get("https://nodes.lightning.computer/availability/v3/btc_summary.json", { headers : { "accept" : "application/json" }}, res => {
+    https.get("https://nodes.lightning.computer/availability/v2/btc_summary.json", { headers : { "accept" : "application/json" }}, res => {
       let body = "";
       res.on("data", data => {
         body += data;

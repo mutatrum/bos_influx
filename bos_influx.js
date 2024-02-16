@@ -17,7 +17,7 @@ async function onSchedule() {
 
   console.log('start');
 
-  await bos()
+  // await bos()
   await terminal()
   await amboss()
 
